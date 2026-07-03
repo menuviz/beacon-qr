@@ -29,7 +29,7 @@ export async function loginAdmin(_previousState, formData) {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(ADMIN_COOKIE, createAdminToken(username), adminCookieOptions());
+  cookieStore.set(ADMIN_COOKIE, createAdminToken(), adminCookieOptions());
 
   redirect(getSafeNext(formData.get("next")));
 }

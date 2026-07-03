@@ -24,8 +24,6 @@ In the Vercel project settings, add:
 NEXT_PUBLIC_SUPABASE_URL
 SUPABASE_SECRET_KEY
 PROGRAM_PASSCODE
-ADMIN_USER
-ADMIN_PASS
 NEXT_PUBLIC_SITE_URL
 ```
 
@@ -33,4 +31,4 @@ Set `NEXT_PUBLIC_SITE_URL` to the Vercel URL for the app, such as `https://your-
 
 ## 6. Deploy And Test
 
-Deploy the project. Visit the Vercel URL and sign in with the Basic Auth username and password. Generate one blank code, open `/print`, and scan the QR with a phone camera. Enter the programming passcode, a label, and a destination URL. Scan the same QR again; it should redirect to the destination and appear in analytics.
+Deploy the project. Visit the Vercel URL, generate one blank code, open `/print`, and scan the QR with a phone camera. Enter the programming passcode, a label, and a destination URL. Scan the same QR again; it should redirect to the destination and appear in analytics.

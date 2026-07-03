@@ -16,8 +16,6 @@ npm install
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 SUPABASE_SECRET_KEY=your_supabase_secret_key
 PROGRAM_PASSCODE=field-programming-passcode
-ADMIN_USER=owner
-ADMIN_PASS=dashboard-password
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
@@ -29,10 +27,10 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 npm run dev
 ```
 
-Open `http://localhost:3000`. The dashboard, print sheet, and analytics pages use browser Basic Auth from `ADMIN_USER` and `ADMIN_PASS`. Public scan URLs under `/r/*` do not require Basic Auth.
+Open `http://localhost:3000`. The dashboard, print sheet, and analytics pages are currently open while this MVP is being tested. Public scan URLs under `/r/*` are also open, and destination writes still require `PROGRAM_PASSCODE`.
 
 ## Security Notes
 
-Beacon is intentionally MVP-simple. The owner dashboard is protected with HTTP Basic Auth, and field programming writes are protected with one shared `PROGRAM_PASSCODE`. There are no user accounts, roles, or per-user audit trails. That keeps setup approachable for a single owner, but a future version should add real authentication if multiple operators need separate access or if code-level audit history matters.
+Beacon is intentionally MVP-simple. The dashboard is currently open while the app is being tested, and field programming writes are protected with one shared `PROGRAM_PASSCODE`. A production version should add dashboard authentication before sharing the URL broadly, especially if multiple operators need separate access or if code-level audit history matters.
 
 All Supabase access uses the Supabase secret key on the server only. Do not expose `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY` in client components or browser code.

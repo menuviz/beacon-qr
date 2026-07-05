@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { programCode } from "@/lib/actions";
 import { getSupabase } from "@/lib/supabase";
 import ProgramForm from "./ProgramForm";
@@ -61,6 +62,6 @@ export default async function ScanRoute({ params, searchParams }) {
     );
   }
 
-  await logScan(id);
+  after(() => logScan(id));
   redirect(code.destination);
 }

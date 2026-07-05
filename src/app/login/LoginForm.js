@@ -18,7 +18,7 @@ export default function LoginForm({ next }) {
         Password
         <input name="password" type="password" autoComplete="current-password" required />
       </label>
-      <button type="submit" disabled={pending}>
+      <button type="submit" className="btn-primary" disabled={pending}>
         {pending ? "Signing in..." : "Sign in"}
       </button>
     </form>

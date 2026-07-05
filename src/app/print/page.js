@@ -3,16 +3,23 @@ import QRCode from "qrcode";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { getSiteUrl } from "@/lib/beacon";
+import { QR_IMAGE_OPTIONS, scanUrlFor } from "@/lib/qr";
 import { getSupabase } from "@/lib/supabase";
 import PrintButton from "./PrintButton";
 
 export const dynamic = "force-dynamic";
 
-async function getPrintableCodes() {
-  const { data, error } = await getSupabase()
+async function getPrintableCodes(ids) {
+  let query = getSupabase()
     .from("qr_codes")
-    .select("id")
+    .select("id, label")
     .order("created_at", { ascending: false });
+
+  if (ids && ids.length > 0) {
+    query = query.in("id", ids);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);
@@ -22,31 +29,35 @@ async function getPrintableCodes() {
   return Promise.all(
     (data || []).map(async (code) => ({
       id: code.id,
-      image: await QRCode.toDataURL(`${baseUrl}/r/${code.id}`, {
-        margin: 1,
-        width: 320,
-        color: {
-          dark: "#071716",
-          light: "#ffffff",
-        },
-      }),
+      label: code.label,
+      image: await QRCode.toDataURL(scanUrlFor(baseUrl, code.id), QR_IMAGE_OPTIONS),
     }))
   );
 }
 
-export default async function PrintPage() {
+export default async function PrintPage({ searchParams }) {
   await requireAdmin();
-  const codes = await getPrintableCodes();
+  const query = await searchParams;
+  const idsParam = Array.isArray(query.ids) ? query.ids[0] : query.ids;
+  const ids = idsParam
+    ? idsParam
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+    : null;
+  const codes = await getPrintableCodes(ids);
 
   return (
     <main className="shell print-shell">
       <header className="topbar print-chrome">
         <div>
           <p className="eyebrow">Print station</p>
-          <h1>Blank Beacon code sheet</h1>
+          <h1>{ids ? `${codes.length} selected code${codes.length === 1 ? "" : "s"}` : "Blank Beacon code sheet"}</h1>
         </div>
         <nav className="nav">
-          <Link href="/">Dashboard</Link>
+          <Link href="/" className="btn btn-outline">
+            Dashboard
+          </Link>
           <PrintButton />
         </nav>
       </header>
@@ -55,7 +66,7 @@ export default async function PrintPage() {
         {codes.map((code) => (
           <article className="qr-card" key={code.id}>
             <img src={code.image} alt={`QR code ${code.id}`} />
-            <p>{code.id}</p>
+            <p>{code.label || code.id}</p>
           </article>
         ))}
       </section>

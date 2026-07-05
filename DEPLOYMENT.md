@@ -19,7 +19,7 @@ Repo **variables** (inlined at build time): `NEXT_PUBLIC_SUPABASE_URL`,
 
 ## Worker secrets (runtime)
 
-Set with `npx wrangler secret put <NAME>`:
+Set with `bunx wrangler secret put <NAME>`:
 
 - `SUPABASE_SECRET_KEY` — Supabase dashboard → Project Settings → API keys
 - `ADMIN_USER` / `ADMIN_PASS` — dashboard login
@@ -37,7 +37,7 @@ Vercel geo headers, no managed transforms needed.
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SITE_URL=https://qr.menuviz.app \
-  npm run deploy
+  bun run deploy
 ```
 
 ## Smoke test

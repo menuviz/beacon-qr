@@ -4,10 +4,11 @@ Beacon prints QR codes before you know where they should go. Each QR points back
 
 ## Local Setup
 
-1. Install dependencies:
+1. Enter the dev shell and install dependencies (nix provides bun):
 
 ```bash
-npm install
+nix develop   # or nix-shell
+bun install
 ```
 
 2. Create `.env.local` from `.env.example`:
@@ -27,7 +28,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 4. Start the app:
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Open `http://localhost:3000` and sign in with `ADMIN_USER` and `ADMIN_PASS`. The dashboard, print sheet, CSV export, and analytics pages are protected by this login. Public scan URLs under `/r/*` stay open, and destination writes still require `PROGRAM_PASSCODE`.

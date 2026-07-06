@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { deleteCode, generateCodes } from "@/lib/actions";
+import { deleteCode, deleteCodes, generateCodes, getCodeAnalytics, programCode } from "@/lib/actions";
 import { logoutAdmin } from "@/lib/admin-actions";
 import { requireAdmin } from "@/lib/admin";
-import { formatDate, truncateUrl } from "@/lib/beacon";
 import { getSupabase } from "@/lib/supabase";
-import DeleteCodeForm from "./DeleteCodeForm";
+import CodesTable from "./CodesTable";
+import GenerateButton from "./GenerateButton";
 
 export const dynamic = "force-dynamic";
 
@@ -32,13 +32,19 @@ export default async function Dashboard() {
       <header className="topbar">
         <div>
           <p className="eyebrow">Beacon command</p>
-          <h1>Dynamic QR codes for field programming</h1>
+          <h1>Dynamic QR codes</h1>
         </div>
         <nav className="nav">
-          <Link href="/export">Export CSV</Link>
-          <Link href="/print">Print sheet</Link>
+          <Link href="/export" className="btn btn-secondary">
+            Export CSV
+          </Link>
+          <Link href="/print" className="btn btn-secondary">
+            Print sheet
+          </Link>
           <form action={logoutAdmin}>
-            <button type="submit">Sign out</button>
+            <button type="submit" className="btn-outline">
+              Sign out
+            </button>
           </form>
         </nav>
       </header>
@@ -47,8 +53,8 @@ export default async function Dashboard() {
         <form action={generateCodes} className="generator">
           <label htmlFor="count">New blank codes</label>
           <div>
-            <input id="count" name="count" type="number" min="1" max="300" defaultValue="300" />
-            <button type="submit">Generate</button>
+            <input id="count" name="count" type="number" min="1" max="300" defaultValue="1" />
+            <GenerateButton />
           </div>
         </form>
         <div className="metric">
@@ -65,47 +71,13 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <section className="table-wrap" aria-label="QR code inventory">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Status</th>
-              <th>Destination</th>
-              <th>Scans</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {codes.map((code) => (
-              <tr key={code.id}>
-                <td className="mono">{code.id}</td>
-                <td>
-                  <span className={code.destination ? "badge live" : "badge blank"}>
-                    {code.destination ? "live" : "blank"}
-                  </span>
-                </td>
-                <td title={code.destination || ""}>{truncateUrl(code.destination)}</td>
-                <td className="mono">{code.scan_count}</td>
-                <td>{formatDate(code.created_at)}</td>
-                <td>
-                  <div className="row-actions">
-                    <Link href={`/r/${code.id}?edit=1`} target="_blank">
-                      Program
-                    </Link>
-                    <Link href={`/analytics/${code.id}`}>Analytics</Link>
-                    <DeleteCodeForm id={code.id} action={deleteCode} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {codes.length === 0 ? (
-          <p className="empty">Generate a batch to create your first printable blank codes.</p>
-        ) : null}
-      </section>
+      <CodesTable
+        codes={codes}
+        deleteCode={deleteCode}
+        deleteCodes={deleteCodes}
+        programCode={programCode}
+        getCodeAnalytics={getCodeAnalytics}
+      />
     </main>
   );
 }

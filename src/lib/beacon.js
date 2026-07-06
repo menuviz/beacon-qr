@@ -1,5 +1,6 @@
 export const CODE_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
 export const CODE_LENGTH = 6;
+export const QR_PROGRAMMED_CHANNEL = "beacon:qr-programmed";
 
 export function makeCodeId() {
   const bytes = crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
@@ -41,6 +42,16 @@ export function formatDate(value) {
   }).format(new Date(value));
 }
 
+export function filenameFor(code) {
+  const slug = String(code.label || code.id)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `${slug || code.id}.png`;
+}
+
 export function truncateUrl(value, max = 44) {
   if (!value) {
     return "Unassigned";
@@ -58,4 +69,43 @@ export function lastNDays(count) {
     date.setDate(today.getDate() - (count - 1 - index));
     return date;
   });
+}
+
+export function buildDaily(scans) {
+  const days = lastNDays(14);
+  const counts = new Map(days.map((date) => [date.toISOString().slice(0, 10), 0]));
+
+  for (const scan of scans) {
+    const key = new Date(scan.scanned_at).toISOString().slice(0, 10);
+    if (counts.has(key)) {
+      counts.set(key, counts.get(key) + 1);
+    }
+  }
+
+  const max = Math.max(1, ...counts.values());
+  return days.map((date) => {
+    const key = date.toISOString().slice(0, 10);
+    const count = counts.get(key);
+    return {
+      key,
+      label: date.toLocaleDateString("en", { month: "short", day: "numeric" }),
+      count,
+      height: `${Math.max(8, (count / max) * 100)}%`,
+    };
+  });
+}
+
+export function buildLocations(scans) {
+  const counts = new Map();
+
+  for (const scan of scans) {
+    if (scan.country) {
+      counts.set(scan.country, (counts.get(scan.country) || 0) + 1);
+    }
+  }
+
+  return Array.from(counts.entries())
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
 }

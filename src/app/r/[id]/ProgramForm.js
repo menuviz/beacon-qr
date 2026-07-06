@@ -1,10 +1,21 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { QR_PROGRAMMED_CHANNEL } from "@/lib/beacon";
 
 export default function ProgramForm({ code, action }) {
   const [state, formAction, pending] = useActionState(action, null);
   const destination = state?.ok ? state.destination : code.destination;
+
+  useEffect(() => {
+    if (!state?.ok || typeof BroadcastChannel === "undefined") {
+      return;
+    }
+
+    const channel = new BroadcastChannel(QR_PROGRAMMED_CHANNEL);
+    channel.postMessage({ id: code.id });
+    channel.close();
+  }, [state, code.id]);
 
   return (
     <section className="program-panel">

@@ -1,6 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { programCode } from "@/lib/actions";
 import { getSupabase } from "@/lib/supabase";
 import ProgramForm from "./ProgramForm";
@@ -34,33 +35,28 @@ function getRequestGeo() {
 }
 
 // The scan path is the product's hot path: a diner is standing there waiting
-// for the redirect. Request-scoped data (headers, geo) is read up front, then
-// the insert runs via waitUntil so the redirect never waits on it — and a
-// logging failure can never break a scan. Outside Workers (next dev) there is
-// no waitUntil, so it degrades to awaiting the insert.
-async function logScan(id) {
+// for the redirect. Request-scoped data (headers, geo) is read up front —
+// request APIs are not reliable inside after() callbacks in a page — and only
+// the insert is deferred, so a scan is one DB read before redirecting and a
+// logging failure can never break it.
+async function buildScanRow(id) {
   const headerList = await headers();
   const geo = getRequestGeo();
 
-  const insert = getSupabase()
-    .from("scans")
-    .insert({
-      qr_id: id,
-      country: geo.country ?? headerList.get("cf-ipcountry"),
-      city: geo.city,
-      referrer: headerList.get("referer"),
-      user_agent: headerList.get("user-agent"),
-    })
-    .then(({ error }) => {
-      if (error) {
-        console.error("Scan log failed", error.message);
-      }
-    });
+  return {
+    qr_id: id,
+    country: geo.country ?? headerList.get("cf-ipcountry"),
+    city: geo.city,
+    referrer: headerList.get("referer"),
+    user_agent: headerList.get("user-agent"),
+  };
+}
 
-  try {
-    getCloudflareContext().ctx.waitUntil(insert);
-  } catch {
-    await insert;
+async function insertScan(row) {
+  const { error } = await getSupabase().from("scans").insert(row);
+
+  if (error) {
+    console.error("Scan log failed", error.message);
   }
 }
 
@@ -90,6 +86,7 @@ export default async function ScanRoute({ params, searchParams }) {
     );
   }
 
-  await logScan(id);
+  const scanRow = await buildScanRow(id);
+  after(() => insertScan(scanRow));
   redirect(code.destination);
 }

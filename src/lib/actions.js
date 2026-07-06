@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { makeCodeId, normalizeDestination } from "@/lib/beacon";
+import { buildDaily, buildLocations, makeCodeId, normalizeDestination } from "@/lib/beacon";
 import { getSupabase } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/admin";
 
@@ -42,6 +42,22 @@ export async function deleteCode(formData) {
   }
 
   const { error } = await getSupabase().from("qr_codes").delete().eq("id", id);
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/print");
+}
+
+export async function deleteCodes(ids) {
+  await requireAdmin();
+  const list = Array.isArray(ids) ? ids.map(String).filter(Boolean) : [];
+  if (list.length === 0) {
+    return;
+  }
+
+  const { error } = await getSupabase().from("qr_codes").delete().in("id", list);
   if (error) {
     throw new Error(error.message);
   }
@@ -91,4 +107,39 @@ export async function programCode(id, _previousState, formData) {
   revalidatePath(`/r/${id}`);
 
   return { ok: true, destination };
+}
+
+export async function getCodeAnalytics(id) {
+  await requireAdmin();
+
+  const supabase = getSupabase();
+  const [{ data: code, error: codeError }, { data: scans, error: scanError }] =
+    await Promise.all([
+      supabase.from("qr_stats").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("scans")
+        .select("scanned_at,country")
+        .eq("qr_id", id)
+        .order("scanned_at", { ascending: true }),
+    ]);
+
+  if (codeError) {
+    throw new Error(codeError.message);
+  }
+  if (scanError) {
+    throw new Error(scanError.message);
+  }
+
+  if (!code) {
+    return null;
+  }
+
+  const scanRows = scans || [];
+  return {
+    code,
+    daily: buildDaily(scanRows),
+    locations: buildLocations(scanRows),
+    firstScan: scanRows[0]?.scanned_at || null,
+    lastScan: scanRows[scanRows.length - 1]?.scanned_at || null,
+  };
 }
